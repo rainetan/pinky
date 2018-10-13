@@ -13,6 +13,9 @@ const config = require('./config.json');
 
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
+  client.guilds.forEach((guild) => {
+    console.log(guild.name);
+  });
 });
 
 /* Returns undefined if none, otherwised a Member */
@@ -54,5 +57,36 @@ client.on('message', msg => {
         console.log(e);
     }
 });
+
+client.on('guildMemberAdd', member => {
+    const channel = member.guild.channels.find(ch => ch.name === config.welcomeChannel);
+    if (!channel) {
+        return;
+    }
+
+    channel.send(`user joined: ${member}, click to promote`).then((msg) => {
+        msg.react('⏫');
+
+        handleReaction(msg, '', () => {
+            const roleId = member.guild.roles.filter((role) => role.name === config.pugRole).first();
+            member.addRole(roleId);
+        });
+        
+    });
+});
+
+function handleReaction(msg, emoji, cb) {
+    const collector = msg.createReactionCollector(() => true, {dispose: true});
+    collector.on('collect', (element) => {
+        if (element.count > 1) {            
+            collector.stop();
+            //msg.delete();
+            msg.react('✅');
+        }
+    });
+    collector.on('end', () => {
+        cb();
+    });
+}
 
 client.login(config.token);
