@@ -22,24 +22,29 @@ client.on('ready', () => {
 function getFirstMentionedUser(msg) {
     return msg.mentions.members.random();
 }
+function shouldPlayClip(msg) {
+    let key = msg.content.toLowerCase();
+    if (config.sounds.hasOwnProperty(key)) {
 
-function babyShark(msg) {    
-    if (!msg.content.toLowerCase().match(/baby.*shark/)) {
-        return;
+        // confirm!
+        msg.react('✅');
+
+        // get channel info
+        const member = getFirstMentionedUser(msg) || msg.member;
+        const voiceChannel = member.voiceChannel;
+
+        playSound(voiceChannel, config.sounds[key].file, config.sounds[key].level);
     }
+}
 
-    const member = getFirstMentionedUser(msg) || msg.member;
-    const voiceChannel = member.voiceChannel;
-
+function playSound(voiceChannel, fileName, level) {
     if (!voiceChannel) {
         return;
     }
 
-    msg.react('🦈');
-
     voiceChannel.join().then(connection => {
-        const dispatcher = connection.playFile('./baby-shark.mp3');
-        dispatcher.setVolume(0.05);
+        const dispatcher = connection.playFile(`./sounds/${fileName}.mp3`);
+        dispatcher.setVolume(level);
 
         dispatcher.on("end", end => {
             voiceChannel.leave();
@@ -52,41 +57,41 @@ function babyShark(msg) {
  
 client.on('message', msg => {
     try {
-        babyShark(msg);
+        shouldPlayClip(msg);
     } catch (e) {
         console.log(e);
     }
 });
 
-client.on('guildMemberAdd', member => {
-    const channel = member.guild.channels.find(ch => ch.name === config.welcomeChannel);
-    if (!channel) {
-        return;
-    }
+// client.on('guildMemberAdd', member => {
+//     const channel = member.guild.channels.find(ch => ch.name === config.welcomeChannel);
+//     if (!channel) {
+//         return;
+//     }
 
-    channel.send(`user joined: ${member}, click to promote`).then((msg) => {
-        msg.react('⏫');
+//     channel.send(`user joined: ${member}, click to promote`).then((msg) => {
+//         msg.react('⏫');
 
-        handleReaction(msg, '', () => {
-            const roleId = member.guild.roles.filter((role) => role.name === config.pugRole).first();
-            member.addRole(roleId);
-        });
+//         handleReaction(msg, '', () => {
+//             const roleId = member.guild.roles.filter((role) => role.name === config.pugRole).first();
+//             member.addRole(roleId);
+//         });
         
-    });
-});
+//     });
+// });
 
-function handleReaction(msg, emoji, cb) {
-    const collector = msg.createReactionCollector(() => true, {dispose: true});
-    collector.on('collect', (element) => {
-        if (element.count > 1) {            
-            collector.stop();
-            //msg.delete();
-            msg.react('✅');
-        }
-    });
-    collector.on('end', () => {
-        cb();
-    });
-}
+// function handleReaction(msg, emoji, cb) {
+//     const collector = msg.createReactionCollector(() => true, {dispose: true});
+//     collector.on('collect', (element) => {
+//         if (element.count > 1) {            
+//             collector.stop();
+//             //msg.delete();
+//             msg.react('✅');
+//         }
+//     });
+//     collector.on('end', () => {
+//         cb();
+//     });
+// }
 
 client.login(config.token);
